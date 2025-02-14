@@ -1,5 +1,6 @@
 # Training Parameters -------------------------------
 ## Loss Computation
+num_epochs: 20
 batch_size: 1 # batch_size > 1 currently only supported if single image dims are used (vertical and horizontal cells)
 # In general: larger batches currently implemented rather primitively
 learning_rate: 0.00001 #1e-5

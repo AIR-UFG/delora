@@ -117,7 +117,7 @@ class Trainer(deploy.deployer.Deployer):
 
         with mlflow.start_run(experiment_id=id, run_name="Training: " + self.config["training_run_name"]):
             self.log_config()
-            for epoch in range(10000):
+            for epoch in range(self.config["num_epochs"]):
                 # Train for 1 epoch
                 epoch_losses = self.train_epoch(epoch=epoch, dataloader=dataloader)
 
