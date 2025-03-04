@@ -23,6 +23,14 @@ class Trainer(deploy.deployer.Deployer):
         self.optimizer = torch.optim.Adam(params=self.model.parameters(),
                                           lr=self.config["learning_rate"])
 
+        if self.config["lr_scheduler"]:
+            self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer,
+                                                                        mode='min',
+                                                                        factor=0.5,
+                                                                        patience=3,
+                                                                        threshold=1e-4,
+                                                                        verbose=True)
+
         # Load checkpoint
         if self.config["checkpoint"]:
             checkpoint = torch.load(self.config["checkpoint"], map_location=self.device)
@@ -84,7 +92,8 @@ class Trainer(deploy.deployer.Deployer):
                                        'loss_po2po': f'{float(epoch_losses["loss_po2po_epoch"] / (counter + 1)):.6f}',
                                        'loss_po2pl': f'{float(epoch_losses["loss_po2pl_epoch"] / (counter + 1)):.6f}',
                                        'loss_pl2pl': f'{float(epoch_losses["loss_pl2pl_epoch"] / (counter + 1)):.6f}',
-                                       'visible_pixels': f'{float(epoch_losses["visible_pixels_epoch"] / (counter + 1)):.6f}'})
+                                       'visible_pixels': f'{float(epoch_losses["visible_pixels_epoch"] / (counter + 1)):.6f}',
+                                       'learning_rate': f'{float(self.optimizer.param_groups[0]["lr"]):.6f}'})
 
             counter += 1
 
@@ -149,6 +158,13 @@ class Trainer(deploy.deployer.Deployer):
                                   step=epoch)
                 mlflow.log_metric("visible pixels", float(epoch_losses["visible_pixels_epoch"]),
                                   step=epoch)
+
+                if self.config["lr_scheduler"]:
+                    # Log learning rate
+                    mlflow.log_metric("learning rate", float(self.optimizer.param_groups[0]['lr']), step=epoch)
+
+                    # Update learning rate based on loss
+                    self.scheduler.step(epoch_losses["loss_epoch"])
 
                 # Save latest checkpoint, and create checkpoint backup all 5 epochs
                 ## Every epoch --> will always be overwritten by latest version
