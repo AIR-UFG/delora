@@ -266,8 +266,8 @@ class Deployer(object):
             images_model_1[index] = image_model_1
             images_model_2[index] = image_model_2
             images_to_pcs_indices_2 = [image_to_pc_indices_2]
-        self.log_img_1 = image_1[:, :3]
-        self.log_img_2 = image_2[:, :3]
+        self.log_img_1 = images_model_1[0:1, :3].clone()  # Use clone() to avoid reference issues
+        self.log_img_2 = images_model_2[0:1, :3].clone()
 
         # Feed into model as batch
         (translations, rotation_representation) = self.model(image_1=images_model_1,
@@ -287,6 +287,7 @@ class Deployer(object):
                 "loss_po2pl_pointwise": torch.zeros(1, device=self.device),
                 "loss_pl2pl": torch.zeros(1, device=self.device),
             }
+            visualization_batch_idx = 0
             for batch_index, computed_transformation in enumerate(computed_transformations):
                 computed_transformation = torch.unsqueeze(computed_transformation, 0)
                 preprocessed_dict = preprocessed_dicts[batch_index]
@@ -313,13 +314,17 @@ class Deployer(object):
 
                 ## Image of transformed source point cloud
                 ## Sparser if loss is only taken on image points, only for first index
-                if batch_index == 0:
+                if batch_index == visualization_batch_idx:
                     image_2_transformed, u_pixel, v_pixel, _, _ = \
                         self.img_projection(input=scan_2_transformed,
                                             dataset=preprocessed_dict["dataset"])
                     self.log_img_2_transformed = image_2_transformed
                     losses["loss_po2pl_pointwise"] = losses_trafo["loss_po2pl_pointwise"]
                     plotting = plotting_step
+
+                    # Store u_pixel and v_pixel for consistent visualization
+                    viz_u_pixel = u_pixel
+                    viz_v_pixel = v_pixel
 
                 if not self.config["unsupervised_at_start"]:
                     target_transformation = torch.eye(4, device=self.device).view(1, 4, 4)
@@ -347,9 +352,7 @@ class Deployer(object):
 
             # Visualization
             if not log_images_bool:
-                _, u_pixel, v_pixel, _, _ = \
-                    self.img_projection(input=scan_2_transformed,
-                                        dataset=preprocessed_dicts[0]["dataset"])
+                u_pixel, v_pixel = viz_u_pixel, viz_v_pixel
             elif not self.config["po2po_alone"]:
                 self.create_images(preprocessed_data=preprocessed_dicts[0],
                                    losses=losses,
