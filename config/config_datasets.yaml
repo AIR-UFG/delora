@@ -35,6 +35,30 @@ kitti: # must be the same as dataset name specified in deployment_options.yaml
   data_path: "./datasets/kitti/data_odometry_velodyne/dataset/sequences" # Path to dataset
   rosbag_path: "./datasets/kitti/rosbags/" # Only needed when converted to rosbag
 
+# AIRCloud --------------------------------------
+aircloud:
+  ## Deployment --------
+  ### Training/testing configuration
+  training_identifiers: [ 7, 8, 9 ]
+  testing_identifiers: [ 10 ]
+  ### Sensor specs
+  vertical_field_of_view: [ -15., 15. ]  # taken from the datasheet, in degrees
+  vertical_cells: 16 # Number of LiDAR rings
+  horizontal_cells: 720
+  ### Pre-processed file
+  preprocessed_path: "./datasets/aircloud/preprocessed/sequences"
+  ### Ground-truth poses
+  pose_data_path: "./datasets/aircloud/data_odometry_poses/dataset/poses"
+
+  ## Pre-processing ----
+  dataset_type: "kitti"
+  ### Specific configurations needed for pre-processing
+  horizontal_cells_preprocessing: 1824
+  ### Preprocessing hyperparameters
+  neighborhood_side_length: [ 5, 11 ]
+  ### Source files (before pre-processing)
+  data_path: "./datasets/aircloud/data_odometry_velodyne/dataset/sequences"
+
 # DARPA --------------------------------------
 darpa:
   ## Deployment --------

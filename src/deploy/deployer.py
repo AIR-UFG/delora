@@ -237,7 +237,8 @@ class Deployer(object):
     def step(self, preprocessed_dicts, epoch_losses=None, log_images_bool=False):
 
         # Use every batchindex separately
-        images_model_1 = torch.zeros(self.batch_size, 4,
+        actual_batch_size = len(preprocessed_dicts)  # Use actual length of input
+        images_model_1 = torch.zeros(actual_batch_size, 4,
                                      self.config[preprocessed_dicts[0]["dataset"]]["vertical_cells"],
                                      self.config[preprocessed_dicts[0]["dataset"]]["horizontal_cells"],
                                      device=self.device)

@@ -50,6 +50,44 @@ In the file ```./config/deployment_options.yaml``` set ```datasets: ["kitti"]```
 ```bash
 preprocess_data.py
 ```
+## AIRCloud Dataset
+AIRCloud is very similar to KITTI, you can follow the same procedure as for KITTI:
+
+Download the AIRCloud dataset and put it to
+```<delora_ws>/datasets/aircloud```.
+
+AIRCloud structure:
+```
+aircloud
+├── data_odometry_poses
+|   └── dataset
+|       ├── 00.txt
+|       ├── 01.txt
+|       └── ...
+├── data_odometry_velodyne
+|   └── dataset
+|       └── sequences
+|           ├── 00
+|           |   ├── calib.txt
+|           |   └── velodyne
+|           |       ├── 000000.bin
+|           |       ├── 000001.bin
+|           |       └── ...
+|           ├── 01
+|           |   ├── calib.txt
+|           |   └── velodyne
+|           |       ├── 000000.bin
+|           |       ├── 000001.bin
+|           |       └── ...
+|           └── ...
+```
+
+### Run preprocessing
+
+In the file ```../config/deployment_options.yaml``` set ```datasets: ["aircloud"]```. Then run
+```bash
+preprocess_data.py
+```
 
 ## Custom Dataset
 
