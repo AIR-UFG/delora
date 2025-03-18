@@ -60,6 +60,7 @@ class Trainer(deploy.deployer.Deployer):
             "visible_pixels_epoch": 0.0,
             "loss_yaw_pitch_roll_epoch": np.zeros(3),
             "loss_true_trafo_epoch": 0.0,
+            "grad_norm_epoch": 0.0,
         }
         counter = 0
 
@@ -75,11 +76,14 @@ class Trainer(deploy.deployer.Deployer):
 
             self.optimizer.zero_grad()
 
-            epoch_losses, _ = (
+            epoch_losses, _, grad_norm = (
                 self.step(
                     preprocessed_dicts=preprocessed_dicts,
                     epoch_losses=epoch_losses,
                     log_images_bool=counter == self.steps_per_epoch - 1 or counter == 0))
+            
+            # Add gradient norm to epoch losses
+            epoch_losses["grad_norm_epoch"] += grad_norm
 
             # Plotting and logging --> only first one in batch
             preprocessed_data = preprocessed_dicts[0]
@@ -93,6 +97,7 @@ class Trainer(deploy.deployer.Deployer):
                                        'loss_po2pl': f'{float(epoch_losses["loss_po2pl_epoch"] / (counter + 1)):.6f}',
                                        'loss_pl2pl': f'{float(epoch_losses["loss_pl2pl_epoch"] / (counter + 1)):.6f}',
                                        'visible_pixels': f'{float(epoch_losses["visible_pixels_epoch"] / (counter + 1)):.6f}',
+                                       'grad_norm': f'{float(epoch_losses["grad_norm_epoch"] / (counter + 1)):.6f}',
                                        'learning_rate': f'{float(self.optimizer.param_groups[0]["lr"]):.6f}'})
 
             counter += 1
@@ -137,6 +142,7 @@ class Trainer(deploy.deployer.Deployer):
                 epoch_losses["loss_po2pl_epoch"] /= self.steps_per_epoch
                 epoch_losses["loss_pl2pl_epoch"] /= self.steps_per_epoch
                 epoch_losses["visible_pixels_epoch"] /= self.steps_per_epoch
+                epoch_losses["grad_norm_epoch"] /= self.steps_per_epoch
 
                 # Print update
                 print("--------------------------")
@@ -158,6 +164,7 @@ class Trainer(deploy.deployer.Deployer):
                                   step=epoch)
                 mlflow.log_metric("visible pixels", float(epoch_losses["visible_pixels_epoch"]),
                                   step=epoch)
+                mlflow.log_metric("gradient norm", float(epoch_losses["grad_norm_epoch"]), step=epoch)
 
                 if self.config["lr_scheduler"]:
                     # Log learning rate

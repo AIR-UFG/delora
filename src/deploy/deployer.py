@@ -161,6 +161,16 @@ class Deployer(object):
         for dict_entry in self.config:
             mlflow.log_param(dict_entry, self.config[dict_entry])
 
+    def compute_gradient_norm(self):
+        """Compute the norm of gradients for all parameters"""
+        total_norm = 0.0
+        for p in self.model.parameters():
+            if p.grad is not None:
+                param_norm = p.grad.detach().data.norm(2)
+                total_norm += param_norm.item() ** 2
+        total_norm = total_norm ** 0.5
+        return total_norm
+
     def transform_image_to_point_cloud(self, transformation_matrix, image):
         point_cloud_transformed = torch.matmul(transformation_matrix[:, :3, :3],
                                                image[:, :3, :, :].view(-1, 3, image.shape[2] *
@@ -345,7 +355,10 @@ class Deployer(object):
 
             if self.training_bool:
                 loss.backward()
+                grad_norm = self.compute_gradient_norm()
                 self.optimizer.step()
+            else:
+                grad_norm = 0.0
 
             if self.config["normalization_scaling"]:
                 for index, preprocessed_dict in enumerate(preprocessed_dicts):
@@ -370,7 +383,7 @@ class Deployer(object):
                 ((torch.round(v_pixel.detach()) < self.config[preprocessed_dicts[0]["dataset"]][
                     "vertical_cells"]) & (v_pixel.detach() > torch.zeros(1).to(self.device))).cpu().numpy())
 
-            return epoch_losses, computed_transformations
+            return epoch_losses, computed_transformations, grad_norm
         else:
             if self.config["normalization_scaling"]:
                 for index, preprocessed_dict in enumerate(preprocessed_dicts):
